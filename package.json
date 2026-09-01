@@ -1,0 +1,22 @@
+{
+  "name": "extension-local-packager",
+  "version": "0.1.0",
+  "description": "Build per-user Windows installers for unpacked Chrome extensions with Native Messaging updates.",
+  "type": "module",
+  "bin": {
+    "extension-local-packager": "./bin/extension-local-packager.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/extension-local-packager.js && node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "schema"
+  ],
+  "license": "MIT"
+}
