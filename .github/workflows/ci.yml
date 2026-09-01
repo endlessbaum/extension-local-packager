@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build fixture
+        working-directory: test/fixture
+        run: node ../../bin/extension-local-packager.js build
+      - name: Verify executables
+        shell: pwsh
+        run: |
+          if (-not (Test-Path test/fixture/release/Setup.exe)) { throw 'Setup.exe was not created' }
+          if (-not (Test-Path test/fixture/release/Uninstall.exe)) { throw 'Uninstall.exe was not created' }
