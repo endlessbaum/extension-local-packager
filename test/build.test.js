@@ -28,6 +28,9 @@ test('build creates Windows bootstrap installer and uninstaller', async () => {
     for (const file of ['Setup.cmd', 'Setup.ps1', 'Uninstall.cmd', 'Uninstall.ps1', 'package-info.json']) {
       assert.equal((await fs.stat(path.join(root, 'release', file))).isFile(), true);
     }
+    const info = JSON.parse(await fs.readFile(path.join(root, 'release', 'package-info.json'), 'utf8'));
+    assert.equal(info.nativeHostName, 'com.tester.test_extension');
+    assert.match(info.extensionId, /^[a-p]{32}$/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
