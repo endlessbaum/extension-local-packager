@@ -1,0 +1,12 @@
+{
+  "appId": "packager-test",
+  "displayName": "Packager Test Extension",
+  "publisherId": "endlessbaum",
+  "extension": {
+    "manifest": "./dist/manifest.json"
+  },
+  "update": {
+    "manifestUrl": "https://example.com/latest.json"
+  },
+  "output": "./release"
+}
