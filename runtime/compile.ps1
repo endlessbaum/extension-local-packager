@@ -11,7 +11,7 @@ $updater = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $OutputD
 $uninstaller = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $OutputDir 'Uninstall.exe')))
 $setupSource = [IO.File]::ReadAllText((Join-Path $SourceDir 'Setup.cs')).Replace('{{UPDATER_BASE64}}', $updater).Replace('{{UNINSTALLER_BASE64}}', $uninstaller)
 $generatedSetup = Join-Path $SourceDir 'Setup.generated.cs'
-[IO.File]::WriteAllText($generatedSetup, $setupSource, [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText($generatedSetup, $setupSource, (New-Object Text.UTF8Encoding($false)))
 $setupRefs = $commonRefs + @('System.Windows.Forms.dll')
 Add-Type -Path $generatedSetup -ReferencedAssemblies $setupRefs -OutputAssembly (Join-Path $OutputDir 'Setup.exe') -OutputType ConsoleApplication
 Remove-Item (Join-Path $OutputDir 'Updater.exe') -Force
