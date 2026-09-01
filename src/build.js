@@ -42,7 +42,7 @@ export async function build(configFile) {
 
   console.log(`Built bootstrap installer in ${project.outputDir}`);
   console.log(`Extension ID: ${project.extensionId}`);
-  console.log('Run Setup.cmd on Windows.');
+  console.log(process.platform === 'win32' ? 'Run Setup.exe on Windows.' : 'Run build on Windows to produce Setup.exe.');
 }
 
 async function buildExecutables(project, info) {
@@ -75,7 +75,12 @@ async function buildExecutables(project, info) {
 }
 
 function csharpString(value) {
-  return String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+  return String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('"', '\\"')
+    .replaceAll('\r', '\\r')
+    .replaceAll('\n', '\\n')
+    .replaceAll('\t', '\\t');
 }
 
 function runProcess(command, args) {
