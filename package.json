@@ -16,7 +16,8 @@
   "files": [
     "bin",
     "src",
-    "schema"
+    "schema",
+    "runtime"
   ],
   "license": "MIT"
 }
