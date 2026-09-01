@@ -1,6 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { loadProject } from './config.js';
+
+const runtimeDir = fileURLToPath(new URL('../runtime/', import.meta.url));
 
 function psQuote(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
@@ -30,9 +34,56 @@ export async function build(configFile) {
   await fs.writeFile(path.join(project.outputDir, 'Setup.cmd'), cmdLauncher('Setup.ps1'));
   await fs.writeFile(path.join(project.outputDir, 'Uninstall.cmd'), cmdLauncher('Uninstall.ps1'));
 
+  if (process.platform === 'win32') {
+    await buildExecutables(project, packageInfo);
+  } else {
+    console.warn('Skipping Windows EXE compilation on this platform. Run build on Windows to create Setup.exe.');
+  }
+
   console.log(`Built bootstrap installer in ${project.outputDir}`);
   console.log(`Extension ID: ${project.extensionId}`);
   console.log('Run Setup.cmd on Windows.');
+}
+
+async function buildExecutables(project, info) {
+  const sourceDir = path.join(project.outputDir, '.build');
+  await fs.mkdir(sourceDir, { recursive: true });
+  const replacements = {
+    APP_ID: info.appId,
+    DISPLAY_NAME: info.displayName,
+    PUBLISHER_ID: info.publisherId,
+    METADATA_URL: info.updateManifestUrl,
+    EXTENSION_ID: info.extensionId,
+    NATIVE_HOST_NAME: info.nativeHostName,
+    UNINSTALL_ID: `${info.publisherId}.${info.appId}`,
+    PACKAGE_VERSION: project.manifest.version
+  };
+  for (const name of ['Setup.cs', 'Updater.cs', 'Uninstall.cs']) {
+    let source = await fs.readFile(path.join(runtimeDir, name), 'utf8');
+    for (const [token, value] of Object.entries(replacements)) {
+      source = source.replaceAll(`{{${token}}}`, csharpString(value));
+    }
+    await fs.writeFile(path.join(sourceDir, name), source);
+  }
+  const compiler = path.join(runtimeDir, 'compile.ps1');
+  await runProcess('powershell.exe', [
+    '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', compiler,
+    '-SourceDir', sourceDir, '-OutputDir', project.outputDir
+  ]);
+  await fs.rm(sourceDir, { recursive: true, force: true });
+  // Scripts remain as a transparent fallback and can also help diagnose unsigned EXE warnings.
+}
+
+function csharpString(value) {
+  return String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+}
+
+function runProcess(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: 'inherit', windowsHide: true });
+    child.on('error', reject);
+    child.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`${command} exited with code ${code}.`)));
+  });
 }
 
 function cmdLauncher(script) {
