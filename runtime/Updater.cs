@@ -11,6 +11,7 @@ internal static class Updater
 {
     private static readonly string InstallRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "{{PUBLISHER_ID}}", "{{APP_ID}}");
     private const string MetadataUrl = "{{METADATA_URL}}";
+    private const string ExtensionId = "{{EXTENSION_ID}}";
 
     public static int Main()
     {
@@ -85,6 +86,7 @@ internal static class Updater
             if (!File.Exists(manifestPath)) throw new InvalidDataException("dist.zip must contain manifest.json at its root.");
             var manifest = serializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(manifestPath));
             if (Required(manifest, "version") != version) throw new InvalidDataException("Manifest version does not match latest.json.");
+            if (ExtensionIdForKey(Required(manifest, "key")) != ExtensionId) throw new InvalidDataException("Extension key does not match the installed Extension ID.");
             if (Directory.Exists(backup)) Directory.Delete(backup, true);
             if (Directory.Exists(extension)) Directory.Move(extension, backup);
             try
@@ -121,6 +123,16 @@ internal static class Updater
     {
         using (var sha = SHA256.Create()) using (var stream = File.OpenRead(file))
             return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+    }
+
+    private static string ExtensionIdForKey(string key)
+    {
+        byte[] der = Convert.FromBase64String(key);
+        byte[] hash;
+        using (var sha = SHA256.Create()) hash = sha.ComputeHash(der);
+        var result = new StringBuilder(32);
+        for (int i = 0; i < 16; i++) { result.Append((char)('a' + (hash[i] >> 4))); result.Append((char)('a' + (hash[i] & 15))); }
+        return result.ToString();
     }
 
     private static bool FixedEquals(string left, string right)
