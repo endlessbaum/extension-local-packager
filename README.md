@@ -8,6 +8,8 @@ npx --yes https://github.com/endlessbaum/extension-local-packager.git validate
 npx --yes https://github.com/endlessbaum/extension-local-packager.git build
 ```
 
-`build` currently creates zero-install Windows bootstrap scripts (`Setup.cmd` and
-`Uninstall.cmd`). Native Messaging host registration and standalone EXE generation
-are the next implementation milestone.
+On Windows, `build` creates `Setup.exe` and `Uninstall.exe` using the compiler included
+with Windows PowerShell/.NET Framework. No .NET SDK is required. Setup embeds the
+Native Messaging updater, registers it under HKCU, downloads and verifies `dist.zip`,
+and adds an entry to Windows Installed Apps. The generated CMD/PowerShell scripts are
+also retained as a transparent fallback.
